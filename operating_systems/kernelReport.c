@@ -24,7 +24,6 @@
 #define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
 /* This function uses the C library function system() to call the unix commands
    cat and grep in order to read and print information from the file 
