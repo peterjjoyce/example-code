@@ -47,6 +47,7 @@ int produceReport() {
    system("uname -a");
    
    printf("\n3.\n");
+   printf("dd:hh:mm:ss\n");
    formatUptime();
    
 }
@@ -68,16 +69,20 @@ int formatUptime() {
    */
    size_t size = 0;
 
-   // we will need a float value to store the formatted version in
-   float digit = 0.0F;
-   float uptimeInSeconds = 0.0F;
+   /* we will need a numerical data type variable to store the formatted version
+      in. Because we are only concerned with seconds as the smallest quantity of
+      time we can use integers.  This will also allow us to do integer division
+      to acheive proper dd:hh:mm:ss formtting without ugly casts.
+   */
+   int digit = 0;
+   int uptimeInSeconds = 0;
 
    while(getdelim(&arg, &size, 0, uptime) != -1) {
       /* we will change the char pointer value to a float value using
          simple ascii arithmetic.  The smallest value we are concerned with
          is seconds so we can discard any numbers after the decimal point.
-         After the arithmetic the period will be -2 so we can loop through
-         each digit until we get a negative digit.
+         After the arithmetic the decimal point will be stored as -2 so we can
+         loop through each digit until we get a negative digit.
       */
       int i;  
       for(i = 0; digit >=0; i++) {
@@ -90,13 +95,15 @@ int formatUptime() {
    }
 
    /* Now that we have the uptime in seconds we can use integer division
-      to get the days, hours, months, and seconds.
+      to get the days, hours, months, and seconds. We will creat variables
+      that allow us to retain the uptimeInSeconds variable for use in future
+      development. As such we use copies and not pointers.
    */
    int timeSegment = 0;
-   int timeRemainder = (int)uptimeInSeconds;
+   int timeRemainder = uptimeInSeconds;
  
   // print days
-   timeSegment = (int)(uptimeInSeconds/86400);
+   timeSegment = uptimeInSeconds/86400;
    timeRemainder = timeRemainder%86400;
    if(timeSegment<10)
       printf("0");
@@ -118,9 +125,6 @@ int formatUptime() {
  
    // print seconds
    printf("%i \n\n", timeRemainder);
-   printf("should be:\n");
-   system("uptime");
-   printf("\n\n");
 
    free(arg); // deallocates memory used by getdelim()
    fclose(uptime); // closes the file
@@ -130,7 +134,7 @@ int formatUptime() {
 
 int main() {
 
-   produceReport(); // produce the report for Exercise B
+   produceReport(); // produce the report
 
    return 0;
 }
