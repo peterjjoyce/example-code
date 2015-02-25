@@ -21,9 +21,7 @@
 ###############################################################################
 */
 
-#define _GNU_SOURCE
-#include <stdio.h>
-#include <stdlib.h>
+#include "kernelReport.h"
 
 /* This function uses the C library function system() to call the unix commands
    cat and grep in order to read and print information from the file 
@@ -131,13 +129,6 @@ int formatUptime() {
 
    free(arg); // deallocates memory used by getdelim()
    fclose(uptime); // closes the file
-
-   return 0;
-}
-
-int main() {
-
-   produceReport(); // produce the report
 
    return 0;
 }
