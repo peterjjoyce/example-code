@@ -52,9 +52,13 @@ int produceReport() {
    
 }
 
+/* This function reads the /proc/uptime system file, stores the system's current
+   uptime in seconds, and prints to the screen a formatted version of the uptime
+   in the form dd:hh:mm:ss.
+*/
 int formatUptime() {
 
-   /* store as a file a pointer to /proc/cpuinfo. Since this is not a simple
+   /* store as a file a pointer to /proc/uptime. Since this is not a simple
       text file we use "rb" instead of "r". */
    FILE *uptime = fopen("/proc/uptime", "rb");
    /* the getdelim() function requires the first argument to be passed be a
