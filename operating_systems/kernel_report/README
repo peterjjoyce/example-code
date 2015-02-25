@@ -1,0 +1,20 @@
+This directory contains a simple program to produce a trivial kernel report.
+
+The program kernelReport is designed to run from a linux terminal; i.e., it
+will not work if you do not do so.  The program does not install, but rather
+simply runs when the terminal session is open and prints the report to the
+screen.  The information produced in the report is as of yet utterly basic and
+will continue to be improved upon so that it might be more than a simple
+assignment and act as something useful to assist users with an alternative to
+typing in innumerable commands for a single collection of sought after data.
+
+The program can be compiled using the make command as long as you have the GNU
+C compiler installed (gcc). If you run into issues try mannually compiling with
+the following commands:
+	$	gcc -c -o kernelReport.o kernelReport.c
+	$	gcc -c -o main.o main.c
+	$	gcc -o kernelReport main.o kernelReport.o
+
+Both methods of compilation produce the program kernelReport, which can be run
+using the following command:
+	$	./kernelReport
