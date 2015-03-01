@@ -45,19 +45,70 @@ int produceReport() {
    
    printf("\n3.\n");
    printf("dd:hh:mm:ss\n");
-   formatUptime();
-   
+   printUptime();
+
+   //test new function
+   char * testFilename = "/proc/stat";
+   char * testMode = "rb";
+   char * testDel = "cpu";
+   char * testCharFromFile = getLineFromFile(testFilename, testMode, testDel);
+   int k;
+   for(k = 0; k<12; k++) {
+      printf("%c", testCharFromFile[k]);
+   }
+   printf("\n");
 }
 
 /* This function reads the /proc/uptime system file, stores the system's current
    uptime in seconds, and prints to the screen a formatted version of the uptime
    in the form dd:hh:mm:ss.
 */
-int formatUptime() {
+int printUptime() {
+   /* we will use a reference to a system file /proc/uptime, which stores the
+      current uptime in seconds and the amount of that time that was spend idle.
+      Using that file we can use the function fileToInt() to store the current
+      uptime in seconds as an int data type.
+   */
+   const char *uptimeFilename = "/proc/uptime";
+   const char *uptimeMode = "rb";
+   int uptimeInSeconds = fileToInt(uptimeFilename, uptimeMode);
 
+   /* Now that we have the uptime in seconds we can use integer division
+      to get the days, hours, months, and seconds.
+   */
+   int timeSegment = 0;
+ 
+  // print days
+   timeSegment = uptimeInSeconds/86400;
+   uptimeInSeconds = uptimeInSeconds%86400;
+   if(timeSegment<10)
+      printf("0");
+   printf("%d:", timeSegment);
+
+   // print hours
+   timeSegment = uptimeInSeconds/3600;
+   uptimeInSeconds = uptimeInSeconds%3600; 
+   if(timeSegment<10)
+      printf("0");
+   printf("%i:", timeSegment);
+
+   // print minutes
+   timeSegment = uptimeInSeconds/60;
+   uptimeInSeconds = uptimeInSeconds%60; 
+   if(timeSegment<10)
+      printf("0");
+   printf("%i:", timeSegment);
+ 
+   // print seconds
+   printf("%i \n\n", uptimeInSeconds);
+
+   return 0;
+} // end printUptime()
+
+int fileToInt(const char *filename, const char *mode) {
    /* store as a file a pointer to /proc/uptime. Since this is not a simple
       text file we use "rb" instead of "r". */
-   FILE *uptime = fopen("/proc/uptime", "rb");
+   FILE *uptime = fopen(filename, mode);
    /* the getdelim() function requires the first argument to be passed be a
       valid pointer capable of being passed to the free() function later to
       deallocate memory. It is usually 0 indicating the first block of malloc
@@ -76,7 +127,7 @@ int formatUptime() {
       to acheive proper dd:hh:mm:ss formtting without ugly casts.
    */
    int digit = 0;
-   int uptimeInSeconds = 0;
+   int integerFromFile = 0;
 
    while(getdelim(&arg, &size, 0, uptime) != -1) {
       /* we will change the char pointer value to a float value using
@@ -86,49 +137,40 @@ int formatUptime() {
          loop through each digit until we get a negative digit.
       */
       int i;  
-      for(i = 0; digit >=0; i++) {
+      for(i = 0; (digit >=0) && (digit <=9); i++) {
          digit = arg[i] - '0';
          if(digit>=0) {// in other words, if digit is an actual digit
             // add the digit onto the variable for uptime (in seconds)
-            uptimeInSeconds = (uptimeInSeconds * 10) + digit;
+            integerFromFile = (integerFromFile * 10) + digit;
          }
       }
    }
-
-   /* Now that we have the uptime in seconds we can use integer division
-      to get the days, hours, months, and seconds. We will creat variables
-      that allow us to retain the uptimeInSeconds variable for use in future
-      development. As such we use copies and not pointers.
-   */
-   int timeSegment = 0;
-   int timeRemainder = uptimeInSeconds;
- 
-  // print days
-   timeSegment = uptimeInSeconds/86400;
-   timeRemainder = timeRemainder%86400;
-   if(timeSegment<10)
-      printf("0");
-   printf("%d:", timeSegment);
-
-   // print hours
-   timeSegment = timeRemainder/3600;
-   timeRemainder = timeRemainder%3600; 
-   if(timeSegment<10)
-      printf("0");
-   printf("%i:", timeSegment);
-
-   // print minutes
-   timeSegment = timeRemainder/60;
-   timeRemainder = timeRemainder%60; 
-   if(timeSegment<10)
-      printf("0");
-   printf("%i:", timeSegment);
- 
-   // print seconds
-   printf("%i \n\n", timeRemainder);
-
    free(arg); // deallocates memory used by getdelim()
    fclose(uptime); // closes the file
+   return integerFromFile;
+} // end fileToInt()
 
-   return 0;
+char* getLineFromFile(const char *filename, const char *mode, const char* del){
+   FILE *this_file = fopen(filename, mode);
+   char *arg = 0;
+   size_t size = 0;
+   int i = sizeof(del); // store the length of del (delimeter) char array
+   i = i/4; // sizeof() returns byte size so we divide by 4 to get n elements
+   int flag = 1; // will be set to -1 if the delimeter doesn't match the line
+   while(getline(&arg, &size, this_file) != -1) {//while there is a line
+      while(i>=0) { //check each line for a match to the delimiting char array
+         if(arg[i]!=del[i]) {
+            /* when the character of the line doesn't match the delimiter
+               setting i to -1 means we won't check the rest of the characters.
+            */            
+            i = -1; // skip to the end of the del array
+            flag = -1; // this line is not the right one
+         }
+         i--;
+      }
+      if(flag!=-1)
+         return arg;
+   }
+   char *delNotFoundIndicator = "error";
+   return delNotFoundIndicator;
 }
