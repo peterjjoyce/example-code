@@ -1,0 +1,6 @@
+proc/stat gives us cpu times: first value is user, third is system, and fourth 					is idle time
+		     	      ctxt switches, processes, boot time
+diskstats gives us read/write: sda first value is # of reads, fifth value is
+				# of writes.
+meminfo gives us total memory and memory free
+loadavg gives us SPU and IO utilization of the last one, five, ten minute periods.  Fourth column show number of currently running processes and tota number of processes.  Last column displays the last process ID used.
