@@ -50,13 +50,19 @@ int produceReport() {
    //test new function
    char * testFilename = "/proc/stat";
    char * testMode = "rb";
-   char * testDel = "cpu";
-   char * testCharFromFile = getLineFromFile(testFilename, testMode, testDel);
-   int k;
-   for(k = 0; k<12; k++) {
+   char * testDel = "btime";
+   int delLength = 4;
+   char * testCharFromFile = getLineFromFile(testFilename, testMode, testDel, delLength);
+   int asciitest = testCharFromFile[0];
+   printf("the first letter of arg is %d\n", asciitest);
+   printf("the last letter of arg is %d\n", testCharFromFile[42]);
+   printf("the next letter of arg is %d\n", testCharFromFile[43]);
+   int k = 0;
+   while(k<80) {
       printf("%c", testCharFromFile[k]);
+      k++;
    }
-   printf("\n");
+   printf("still works\n");
 }
 
 /* This function reads the /proc/uptime system file, stores the system's current
@@ -150,23 +156,35 @@ int fileToInt(const char *filename, const char *mode) {
    return integerFromFile;
 } // end fileToInt()
 
-char* getLineFromFile(const char *filename, const char *mode, const char* del){
+char* getLineFromFile(const char *filename, const char *mode, const char* del, int i){
    FILE *this_file = fopen(filename, mode);
    char *arg = 0;
    size_t size = 0;
-   int i = sizeof(del); // store the length of del (delimeter) char array
-   i = i/4; // sizeof() returns byte size so we divide by 4 to get n elements
+   int sizeOfDel = i;
+   //int i = sizeof(del); // store the length of del (delimeter) char array
+   //i = i/4; // sizeof() returns byte size so we divide by 4 to get n elements
+
+   printf("the delimiter is %s\n", del);
+   printf("its length is %d\n", i);
+
    int flag = 1; // will be set to -1 if the delimeter doesn't match the line
    while(getline(&arg, &size, this_file) != -1) {//while there is a line
-      while(i>=0) { //check each line for a match to the delimiting char array
+      printf("in the first while\n");
+      i = 0;
+      flag = 1;
+      while(i<=sizeOfDel) { //check each line for a match to the delimiting char array
+         printf("in the second while\n");
+         printf("arg[i] is %c\n", arg[i]);
+         printf("del[i] is %c\n", del[i]);
          if(arg[i]!=del[i]) {
+            printf("in if\n");
             /* when the character of the line doesn't match the delimiter
                setting i to -1 means we won't check the rest of the characters.
             */            
-            i = -1; // skip to the end of the del array
+            i = sizeOfDel; // skip to the end of the del array
             flag = -1; // this line is not the right one
          }
-         i--;
+         i++;
       }
       if(flag!=-1)
          return arg;
