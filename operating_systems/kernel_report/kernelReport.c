@@ -52,19 +52,27 @@ int produceReport() {
    // here are the parameters
    char * testFilename = "/proc/stat";
    char * testMode = "rb";
-   char * testDel = "btime";
-   int delLength = 5;
+   char * testDel = "cpu0";
+   int delLength = 4; // number of characters in testDel
    // here is a pointer value that will be altered by the function
    int lineLength = 0;
 
    char * testCharFromFile = getLineFromFile(testFilename, testMode, testDel, delLength, &lineLength);
-   int asciitest = testCharFromFile[0];
-   printf("the first letter of arg is %d\n", asciitest);
-   printf("the last letter of arg is %d\n", testCharFromFile[42]);
-   printf("the next letter of arg is %d\n", testCharFromFile[43]);
+
+
+
+   //char str1[1];
+   //strcpy(str1, "c");
+
+  // int ret;
+
+
    int k = 0;
    while(k<lineLength) {
+     // ret = strcmp(str1, &testCharFromFile[k]);
       printf("%c", testCharFromFile[k]);
+      if(testCharFromFile[k] == ' ')
+         printf("_SPACE_ ");
       k++;
    }
    printf("still works\n");
@@ -166,24 +174,14 @@ char* getLineFromFile(const char *filename, const char *mode, const char* del, i
    char *arg = 0;
    size_t size = 0;
    int sizeOfDel = i;
-   //int i = sizeof(del); // store the length of del (delimeter) char array
-   //i = i/4; // sizeof() returns byte size so we divide by 4 to get n elements
-
-   printf("the delimiter is %s\n", del);
-   printf("its length is %d\n", i);
 
    int flag = 1; // will be set to -1 if the delimeter doesn't match the line
    while(*lineLength != -1) {//while there is a line
-      printf("in the first while\n");
       i = 0;
       flag = 1;
       *lineLength = getline(&arg, &size, this_file);
       while(i<sizeOfDel) { //check each line for a match to the delimiting char array
-         printf("in the second while\n");
-         printf("arg[i] is %c\n", arg[i]);
-         printf("del[i] is %c\n", del[i]);
          if(arg[i]!=del[i]) {
-            printf("in if\n");
             /* when the character of the line doesn't match the delimiter
                setting i to -1 means we won't check the rest of the characters.
             */            
@@ -192,11 +190,10 @@ char* getLineFromFile(const char *filename, const char *mode, const char* del, i
          }
          i++;
       }
-      if(flag!=-1){
-         return arg;
+      if(flag!=-1){ // this must be the right line
+         return arg; // so return it
       }
    }
-   //assert(lineLength); // ensure lineLength is not NULL
    *lineLength = -1; //getline() will make this -1 if there is an error as well
    char *delNotFoundIndicator = "error";
    return delNotFoundIndicator;
