@@ -48,17 +48,22 @@ int produceReport() {
    printUptime();
 
    //test new function
+
+   // here are the parameters
    char * testFilename = "/proc/stat";
    char * testMode = "rb";
    char * testDel = "btime";
-   int delLength = 4;
-   char * testCharFromFile = getLineFromFile(testFilename, testMode, testDel, delLength);
+   int delLength = 5;
+   // here is a pointer value that will be altered by the function
+   int lineLength = 0;
+
+   char * testCharFromFile = getLineFromFile(testFilename, testMode, testDel, delLength, &lineLength);
    int asciitest = testCharFromFile[0];
    printf("the first letter of arg is %d\n", asciitest);
    printf("the last letter of arg is %d\n", testCharFromFile[42]);
    printf("the next letter of arg is %d\n", testCharFromFile[43]);
    int k = 0;
-   while(k<80) {
+   while(k<lineLength) {
       printf("%c", testCharFromFile[k]);
       k++;
    }
@@ -156,7 +161,7 @@ int fileToInt(const char *filename, const char *mode) {
    return integerFromFile;
 } // end fileToInt()
 
-char* getLineFromFile(const char *filename, const char *mode, const char* del, int i){
+char* getLineFromFile(const char *filename, const char *mode, const char* del, int i, int * lineLength){
    FILE *this_file = fopen(filename, mode);
    char *arg = 0;
    size_t size = 0;
@@ -168,11 +173,12 @@ char* getLineFromFile(const char *filename, const char *mode, const char* del, i
    printf("its length is %d\n", i);
 
    int flag = 1; // will be set to -1 if the delimeter doesn't match the line
-   while(getline(&arg, &size, this_file) != -1) {//while there is a line
+   while(*lineLength != -1) {//while there is a line
       printf("in the first while\n");
       i = 0;
       flag = 1;
-      while(i<=sizeOfDel) { //check each line for a match to the delimiting char array
+      *lineLength = getline(&arg, &size, this_file);
+      while(i<sizeOfDel) { //check each line for a match to the delimiting char array
          printf("in the second while\n");
          printf("arg[i] is %c\n", arg[i]);
          printf("del[i] is %c\n", del[i]);
@@ -186,9 +192,12 @@ char* getLineFromFile(const char *filename, const char *mode, const char* del, i
          }
          i++;
       }
-      if(flag!=-1)
+      if(flag!=-1){
          return arg;
+      }
    }
+   //assert(lineLength); // ensure lineLength is not NULL
+   *lineLength = -1; //getline() will make this -1 if there is an error as well
    char *delNotFoundIndicator = "error";
    return delNotFoundIndicator;
 }

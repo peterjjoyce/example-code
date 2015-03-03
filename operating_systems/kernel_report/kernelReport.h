@@ -48,6 +48,6 @@ int fileToInt(const char *, const char *);
    passed as a parameter.  When it finds that word it returns the line as a char
    array.
 */
-char * getLineFromFile(const char *, const char *, const char *, int);
+char * getLineFromFile(const char *, const char *, const char *, int, int *);
 
 #endif
