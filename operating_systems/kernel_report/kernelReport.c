@@ -13,6 +13,7 @@
 #      -as-number-of-cores
 #   www.open-std.org/jtc1/sc22/wg14/www/standards.html
 #   www.asciitable.com
+#   www.linuxhowtos.org/System/procstat.htm
 # program description:
 #   This program produces a report on the following kernel statements:
 #      1) CPU type and model
@@ -48,7 +49,7 @@ int printKernelVersion(){
 */
 int printUptime() {
    printf("\n\n-- Time since boot:\n");
-   printf("dd:hh:mm:ss\n");
+   printf("\t\tdd:hh:mm:ss\n\t\t");
    /* we will use a reference to a system file /proc/uptime, which stores the
       current uptime in seconds and the amount of that time that was spend idle.
       Using that file we can use the function fileToInt() to store the current
@@ -85,7 +86,7 @@ int printUptime() {
    printf("%i:", timeSegment);
  
    // print seconds
-   printf("%i \n\n", uptimeInSeconds);
+   printf("%i", uptimeInSeconds);
 
    return 0;
 } // end printUptime()
@@ -94,31 +95,49 @@ int printUptime() {
    and idle.
 */
 int printCPUtime(){
-   // here are the parameters
-   char * testFilename = "/proc/stat";
-   char * testMode = "rb";
-   char * testDel = "cpu0";
+   printf("\n\n-- CPU time:\n\t\tuser\t\tsystem\t\tidle\n");
+   /* First we have to create parameters that will be passed to the function
+      getLineFromFile(), which will return a char * pointing to a series of char
+      values received from the file line.
+   */
+   char * testFilename = "/proc/stat"; // file containing CPU times
+   char * testMode = "rb"; // stat is a non-text file
+   char * testDel = "cpu0"; // the first word of the line we are looking for
    int delLength = 4; // number of characters in testDel
-   // here is a pointer value that will be altered by the function
+   // lineLength will be altered by the function getLineFromFile()
    int lineLength = 0;
 
    char * testCharFromFile = getLineFromFile(testFilename, testMode, testDel, delLength, &lineLength);
 
+   /* Now that we have our line as a series of chars we can look for the data
+      we are seeking. The linux stat file contains a line beginning with cpu
+      that aggregates the time from all the CPUs.  We want time for the user
+      mode, system mode, and in idle.  These are the first, third, and fourth
+      numerical values respectively just after the word "cpu".  We can disregard
+      the second number, which tracks niced processes in user mode.
+   */
    int k = 0;
+   int wordNumber = 1; // we start on the first word
    while(k<lineLength) {
-     // ret = strcmp(str1, &testCharFromFile[k]);
-      printf("%c", testCharFromFile[k]);
-      if(testCharFromFile[k] == ' ')
-         printf("_SPACE_ ");
+      if(testCharFromFile[k] == ' '){
+         wordNumber++;
+         k++;
+         /* We want to print the second, fourth, and fifth words */
+         if(wordNumber == 2 || wordNumber == 4 || wordNumber == 5)
+            printf("\t\t");
+      }
+      if(wordNumber == 2 || wordNumber == 4 || wordNumber == 5)
+         printf("%c", testCharFromFile[k]);
       k++;
    }
-   printf("still works\n");
+   printf("\n");
    return 0;
 }
 
 /* This function prints to the screen the number of disk read/writes.
 */
 int printDiskRW(){
+   
    return 0;
 }
 

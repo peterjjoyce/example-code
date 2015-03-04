@@ -11,9 +11,10 @@ typing in innumerable commands for a single collection of sought after data.
 The program can be compiled using the make command as long as you have the GNU
 C compiler installed (gcc). If you run into issues try mannually compiling with
 the following commands:
-	$	gcc -c -o kernelReport.o kernelReport.c
-	$	gcc -c -o main.o main.c
-	$	gcc -o kernelReport main.o kernelReport.o
+   $  gcc -c -o fileReader.o fileReader.c -I.
+	$	gcc -c -o kernelReport.o kernelReport.c -I.
+	$	gcc -c -o main.o main.c -I.
+	$	gcc -o kernelReport fileReader.o kernelReport.o main.o -I.
 
 Both methods of compilation produce the program kernelReport, which can be run
 using the following command:
