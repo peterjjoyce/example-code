@@ -94,6 +94,25 @@ int printUptime() {
    and idle.
 */
 int printCPUtime(){
+   // here are the parameters
+   char * testFilename = "/proc/stat";
+   char * testMode = "rb";
+   char * testDel = "cpu0";
+   int delLength = 4; // number of characters in testDel
+   // here is a pointer value that will be altered by the function
+   int lineLength = 0;
+
+   char * testCharFromFile = getLineFromFile(testFilename, testMode, testDel, delLength, &lineLength);
+
+   int k = 0;
+   while(k<lineLength) {
+     // ret = strcmp(str1, &testCharFromFile[k]);
+      printf("%c", testCharFromFile[k]);
+      if(testCharFromFile[k] == ' ')
+         printf("_SPACE_ ");
+      k++;
+   }
+   printf("still works\n");
    return 0;
 }
 
