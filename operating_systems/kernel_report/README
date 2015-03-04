@@ -19,3 +19,20 @@ the following commands:
 Both methods of compilation produce the program kernelReport, which can be run
 using the following command:
 	$	./kernelReport
+
+
+################################################################################
+
+
+Currently the program produces a report on the following kernel states:
+      1)  CPU type and model
+      2)  Kernel version
+      3)  Amount of time since the system was booted (dd:hh:mm:ss)
+      4)  CPU time in user mode, system mode, and idle
+      5)  Number of disk reads/writes
+      6)  Number of context switches
+      7)  Time when the system was last booted
+      8)  Number of processes created
+      9)  Amount of memory
+      10) Amount of memory currently available
+      11) List of load averages

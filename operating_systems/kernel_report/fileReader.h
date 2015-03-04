@@ -1,3 +1,13 @@
+/*
+###############################################################################
+# @author Peter J. Joyce IV
+# @author Sean Themar
+# Project 1 Exercise B/C/D
+# CSCE 444 Spring 2015
+# 3.4.2015
+###############################################################################
+*/
+
 #ifndef _FILEREADER_H
 #define _FILEREADER_H
 #include <stdio.h>

@@ -1,10 +1,31 @@
+/*
+###############################################################################
+# @author Peter J. Joyce IV
+# @author Sean Themar
+# Project 1 Exercise B/C/D
+# CSCE 444 Spring 2015
+# 3.4.2015
+###############################################################################
+*/
+
 #include "fileReader.h"
 
 /* This function reads a file and loops through each line looking for the word
-   passed as a parameter.  When it finds that word it returns the line as a char
-   array.
+   passed as a parameter indicating the first word of the line.  When it finds
+   that word it returns the line as a char array. Subsequent lines are
+   disregarded.
+   @param filename the name of the file to be opened and read
+   @param mode the mode (r or rb) of the reading
+   @param del the delimiter indicating the first word of the line being sought
+   @param i the number of characters of del
+   @param lineLength the length of the line being returned, which is altered
+            within this function after getline() is called
 */
-char* getLineFromFile(const char *filename, const char *mode, const char* del, int i, int * lineLength){
+char* getLineFromFile(const char *filename, const char *mode, const char* del, 
+   int i, int * lineLength){
+   /* for explanations of these types see the getIntFromFile() function, which
+      uses as similar function
+   */   
    FILE *this_file = fopen(filename, mode);
    char *arg = 0;
    size_t size = 0;
@@ -15,7 +36,7 @@ char* getLineFromFile(const char *filename, const char *mode, const char* del, i
       i = 0;
       flag = 1;
       *lineLength = getline(&arg, &size, this_file);
-      while(i<sizeOfDel) { //check each line for a match to the delimiting char array
+      while(i<sizeOfDel) { //check each line for the delimiting char array
          if(arg[i]!=del[i]) {
             /* when the character of the line doesn't match the delimiter
                setting i to -1 means we won't check the rest of the characters.
@@ -41,6 +62,8 @@ char* getLineFromFile(const char *filename, const char *mode, const char* del, i
 /* This function assumes it is being passed the name of a file that contains
    an integer as the first item.  It reads the file and returns an integer that 
    is read from the file.
+   @param filename The name of the file that contains an int first
+   @param mode The mode of the file reading (r or rb)
 */
 int getIntFromFile(const char *filename, const char *mode) {
    /* store as a file a pointer to /proc/uptime. Since this is not a simple
