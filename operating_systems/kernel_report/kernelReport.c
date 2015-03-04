@@ -116,7 +116,48 @@ int printCPUtime(){
 /* This function prints to the screen the number of disk read/writes.
 */
 int printDiskRW(){
-   printf("\n\n-- TO BE COMPLETED --");
+   printf("\n\n-- Number of disk read and writes:\n\t\t");
+   int lineLength = 0;
+   char * lineFromFile = getLineFromFile("/proc/diskstats", "rb", " ", 1, 
+      &lineLength);
+   int flag = 0;
+   int k = 0;
+   int wordNumber = 1;
+   while(k<lineLength) {
+      if(lineFromFile[k] == ' '){
+         wordNumber++;
+         k++;
+      }
+      /* The if statement checks to see if we are 9 spaces from the delimiting
+         character and prints the "Disk Reads: " and number of reads provided by
+         the line that lineFromFile received from /proc/diskstats.
+      */
+      if(wordNumber == 9){
+         /* The if statement checks if flag is 0, if flag is 0, we print Disk
+            Reads: and set flag to 1.
+         */
+         if(flag == 0){
+            printf("Disk Reads:  ");
+            flag = 1;
+         }
+         printf("%c", lineFromFile[k]);
+      }
+      /* The if statement checks to see if we are 13 spaces from the delimiting
+         character and prints the "Disk Writes: " and number of writes provided
+         by the line that lineFromFile received from /proc/diskstats.
+      */
+      if(wordNumber == 13){
+         /* The if statement checks if flag is 1, if flag is 1, we print Disk 
+            Writes: and set flag to 2
+         */
+         if(flag == 1){
+            printf("\n\t\tDisk Writes: ");
+            flag = 2;
+         }
+         printf("%c", lineFromFile[k]);     
+      }
+      k++;
+   }
    return 0;
 }
 
