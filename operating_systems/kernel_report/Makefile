@@ -1,7 +1,7 @@
 CC=gcc
 CFLAGS=-I.
-DEPS = kernelReport.h
-OBJ = kernelReport.o main.o
+DEPS = fileReader.h kernelReport.h
+OBJ = fileReader.o kernelReport.o main.o
 
 %.o: %.c $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)

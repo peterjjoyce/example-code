@@ -27,27 +27,47 @@
 #include <stdlib.h>
 #include <string.h>
 
-/* This function uses the C library function system() to call the unix commands
-   cat and grep in order to read and print information from the file 
-   /proc/cpuinfo. Specifically it produces a report containing the prespecified
-   state information for CPU type/model, Kernel version, and ammount of time
-   since the system was booted.
-*/
-int produceReport();
+int printCPUtype();
+
+int printKernelVersion();
 
 /* This function prints to the screen a formatted version of the uptime
    in the form dd:hh:mm:ss.
 */
 int printUptime();
 
-/* This function reads a file and returns an integer that is read from the file.
+/* This function prints to the screen the CPU time in user mode, system mode,
+   and idle.
 */
-int fileToInt(const char *, const char *);
+int printCPUtime();
 
-/* This function reads a file and loops through each line looking for the word
-   passed as a parameter.  When it finds that word it returns the line as a char
-   array.
+/* This function prints to the screen the number of disk read/writes.
 */
-char * getLineFromFile(const char *, const char *, const char *, int, int *);
+int printDiskRW();
+
+/* This function prints to the screen the number of context switches.
+*/
+int printNumContextSwitches();
+
+/* This function prints to the screen the time when the system was last booted.
+*/
+int printTimeOfLastBoot();
+
+/* This function prints to the screen the number of processes created.
+*/
+int printNumProcCreated();
+
+/* This function prints to the screen the amount of memory.
+*/
+int printMemoryTotal();
+
+/* This function prints to the screen the amount of memory available.
+*/
+int printMemoryAvailable();
+
+/* This function prints to the screen a list of load averages with each averaged
+   over the last minute.
+*/
+int printLoadAverages();
 
 #endif

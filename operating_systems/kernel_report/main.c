@@ -23,10 +23,21 @@
 
 #include <stdio.h>
 #include "kernelReport.h"
+#include "fileReader.h"
 
 int main() {
 
-   produceReport(); // produce the report using functions from kernelReport.c
+   printf("\n\nThis is the system's current state information:\n\t");
+
+   printCPUtype();
+
+   printKernelVersion();
+
+   printUptime();
+
+   printCPUtime();
+
+   
 
    return 0;
 }
