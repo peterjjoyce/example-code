@@ -11,6 +11,7 @@
 #   http://www.gnu.org/software/libc/manual/html_node/Implementing-a-Shell.html
 #		Implementing-a-Shell
 #	http://stephen-brennan.com/2015/01/16/write-a-shell-in-c/
+#	http://comsci.liu.edu/~murali/unix/PThread.htm
 # program description:
 #   This program acts as a shimple shell:
 #		1) echos the command to stdout
@@ -19,160 +20,177 @@
 #		4) creates a child to exec the program
 ###############################################################################
 */
-
-#include <stdio.h>
-
-/* Compile with: g++ -Wall –Werror -o shell shell.c */
  
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <pthread.h>
 #include <ctype.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
-/* The array below will hold the arguments: args[0] is the command. */
-static char* args[512];
-pid_t pid;
-int command_pipe[2];
-#define READ 0
-#define WRITE 1
-/*
-* Handle commands separatly
-* input: return value from previous command (useful for pipe file descriptor)
-* first: 1 if first command in pipe-sequence (no input from previous pipe)
-* last: 1 if last command in pipe-sequence (no input from previous pipe)
-*
-* EXAMPLE: If you type "ls | grep shell | wc" in your shell:
-* fd1 = command(0, 1, 0), with args[0] = "ls"
-* fd2 = command(fd1, 0, 0), with args[0] = "grep" and args[1] = "shell"
-* fd3 = command(fd2, 0, 1), with args[0] = "wc"
-*
-* So if 'command' returns a file descriptor, the next 'command' has this
-* descriptor as its 'input'.
+
+#define TOK_BUFSIZE 64
+#define TOK_DELIM " \t\r\n\a"
+
+/* This function tokenizes a char array and inserts each delimited word into
+   a separate char array, returning a pointer to the first char pointer
 */
-static int command(int input, int first, int last)
-{
-	int pipettes[2];
-	/* Invoke pipe */
-	pipe( pipettes );
-	pid = fork();
-	/*
-	SCHEME:
-	STDIN --> O --> O --> O --> STDOUT
-	*/
-	if (pid == 0) 
-	{
-		if (first == 1 && last == 0 && input == 0) 
-		{
-			// First command
-			dup2( pipettes[WRITE], STDOUT_FILENO );
-		} 
-		else if (first == 0 && last == 0 && input != 0) 
-		{
-			// Middle command
-			dup2(input, STDIN_FILENO);
-			dup2(pipettes[WRITE], STDOUT_FILENO);
-		}
-		else
-		{
-			// Last command
-			dup2( input, STDIN_FILENO );
-		}
-		if (execvp( args[0], args) == -1)
-			_exit(EXIT_FAILURE); // If child fails
+char **lineSplitter(char *line) {
+	int bufsize = TOK_BUFSIZE, position = 0;
+	char **tokens = malloc(bufsize * sizeof(char*));
+	char *token, **tokens_backup;
+
+	if(!tokens) {
+		fprintf(stderr, "Allocation Error\n");
+		exit(EXIT_FAILURE);
 	}
-	if (input != 0)
-		close(input);
-	// Nothing more needs to be written
-	close(pipettes[WRITE]);
-	// If it's the last command, nothing more needs to be read
-	if (last == 1)
-		close(pipettes[READ]);
-	return pipettes[READ];
+
+	token = strtok(line, TOK_DELIM);
+	while(token!=NULL) {
+		tokens[position] = token;
+		position++;
+
+		 if (position >= bufsize) {
+			bufsize += TOK_BUFSIZE;
+			tokens_backup = tokens;
+			tokens = realloc(tokens, bufsize * sizeof(char*));
+			if (!tokens) {
+				free(tokens_backup);
+				fprintf(stderr, "Allocation Error\n");
+				exit(EXIT_FAILURE);
+			}
+		}
+		token = strtok(NULL, TOK_DELIM);
+	}
+	tokens[position] = NULL;
+	return tokens;
 }
 
-/* Final cleanup, 'wait' for processes to terminate.
-* n : Number of times 'command' was invoked.
+/* This function is used to read a line from a stream and return a type
+   char *, rather than a char ** as getline() does by default.
 */
-static void cleanup(int n)
+char *readLine(void)
 {
-	int i;
-
-	for (i = 0; i < n; ++i)
-		wait(NULL);
+  char *line = NULL;
+  ssize_t bufsize = 0;
+  getline(&line, &bufsize, stdin);
+  return line;
 }
-static int run(char* cmd, int input, int first, int last);
-static char line[1024];
-static int n = 0; /* number of calls to 'command' */
+
+/* This structure is used to encapsulate a pointer to a char pointer (char **)
+   so that the data can be copied and utilized inside functions requiring
+   void types, e.g., pthread_create().
+*/
+typedef struct args_param{
+	char **encapsulated_args;
+} args_param;
+
+void *runner(void *param) {
+		if(fork() == 0) {
+			/* use param to create a copy of the struct containing out
+			   encapsulated args */
+			args_param *args_param_copy = (args_param *)param;
+			/* now create a new char ** by decapsulating args from the struct
+			   to be used in execvp() */
+			char ** decapsulated_args;
+			decapsulated_args = args_param_copy->encapsulated_args;
+
+			execvp(decapsulated_args[0], decapsulated_args);
+		}
+}
+
 int main()
 {
-	printf("SIMPLE SHELL: Type 'exit' or send EOF to exit.\n");
+
+	char *line;
+	char **args;
+
+	printf("\n exited the BASH SHELL...\nentered the SIMPLE SHELL:");
+	printf("\n enter 'exit' to exit.\n\n");
 	while (1) 
 	{
-		/* Print the command prompt */
-		printf("$> ");
+		/* create a flag to determine whether to run the process in
+		   the background */
+		int create_background_process = 0;
+		/* Print prompt */
+		printf("$$imple$hell$  ");
+		/* flush all open output streams */
 		fflush(NULL);
-		/* Read a command line */
-		if (!fgets(line, 1024, stdin))
-			return 0;
-		int input = 0;
-		int first = 1;
-		char* cmd = line;
-		char* next = strchr(cmd, '|'); /* Find first '|' */
 
-		while (next != NULL) 
-		{
-			/* 'next' points to '|' */
-			*next = '\0';
-			input = run(cmd, input, first, 0);
-			cmd = next + 1;
-			next = strchr(cmd, '|'); /* Find next '|' */
-			first = 0;
-		}
-		input = run(cmd, input, first, 1);
-		cleanup(n);
-		n = 0;
-	}
-	return 0;
-}
-static void split(char* cmd);
-static int run(char* cmd, int input, int first, int last)
-{
-	split(cmd);
-	if (args[0] != NULL) 
-	{
-		if (strcmp(args[0], "exit") == 0)
+		/* get typed command */
+		line = readLine();
+		/* parse the command */
+		args = lineSplitter(line);
+
+
+		/* if the user typed "exit" exit the shell program */
+		if (strcmp(args[0], "exit") == 0){
+			printf("you will be returned to the standard bash shell...\n\n");
+			sleep(1);
 			exit(0);
-		n += 1;
-		return command(input, first, last);
+		}
+
+		/* check to see if the user typed an "&" indicating he/she
+		   wants control over the shell back before the process is complete */
+		int i = 0;
+		while(args[i] != NULL) {
+			if(strcmp(args[i], "&") == 0) {
+				create_background_process = 1;
+				/* we'll use a goto statement so we stop searching once we've
+				   found the '&' as well as to preserve its location in our
+				   int value, i. */
+				goto End_while;
+			}
+			i++;
+		} End_while:
+
+		switch(create_background_process){
+
+			/* if the user does not indicate he/she wants to run a process in
+			   the background we will defer to a standard fork and wait */
+			case 0 :
+				/* fork and have the child execute the command */
+				if(fork() == 0) {
+					execvp(args[0], args);
+				/* have the parent wait */
+				} else {
+					int status;
+					wait(&status);
+				}
+				break;
+
+			/* if the user wants to put a process in the background we will
+			   use a separate thread */
+			case 1 :
+				/* remove the '&'' from args */
+				*(args + i) = NULL;
+
+				/* create a struct to pass arguments to pthread_create() */
+				struct args_param *command;
+				command = (args_param *) malloc(sizeof(args_param));
+				/* copy args to the struct */
+				command->encapsulated_args = args;
+
+				/* create a new thread */
+				pthread_t tid;
+
+				/* if pthread_create returned an error code alert the user*/
+        		if (pthread_create(&(tid), NULL, &runner, (void *) command)) {
+            		printf("\ncan't create thread.\nexiting...\n");
+            		sleep(4);
+            		return EXIT_FAILURE;
+        		}
+
+        		/* once runner is complete it can rejoin the parent shell */
+        		pthread_join(tid, NULL);
+				break;
+		}
+
+		free(line);
+		free(args);
+
 	}
-	return 0;
+
+	return EXIT_SUCCESS;
 }
-static char* skipwhite(char* s)
-{
-	while (isspace(*s)) ++s;
-		return s;
-}
-static void split(char* cmd)
-{
-	cmd = skipwhite(cmd);
-	char* next = strchr(cmd, ' ');
-	int i = 0;
-	while(next != NULL) 
-	{
-		next[0] = '\0';
-		args[i] = cmd;
-		++i;
-		cmd = skipwhite(next + 1);
-		next = strchr(cmd, ' ');
-	}
-	if (cmd[0] != '\0') 
-	{
-		args[i] = cmd;
-		next = strchr(cmd, '\n');
-		next[0] = '\0';
-		++i;
-	}
-	args[i] = NULL;
-} 
