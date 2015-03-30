@@ -29,6 +29,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <fcntl.h>
 
 #define TOK_BUFSIZE 64
 #define TOK_DELIM " \t\r\n\a"
@@ -96,9 +97,41 @@ void *runner(void *param) {
 			char ** decapsulated_args;
 			decapsulated_args = args_param_copy->encapsulated_args;
 
+			/* execute the command inside the thread */
 			execvp(decapsulated_args[0], decapsulated_args);
 		}
 }
+
+/* This function parses the command given by the user looking for indicators
+   of I/O redirection or a needed background process by looking for the '&',
+   '<', and '>' chars. It alters flags that must be created before being
+   called, creates a copy of the command given its typically small size coupled
+   witht the rationale of easier referencing and stability and returns 0 
+   on success */
+/* There is currently a bug that creates a segmentation fault when the user
+   attempts to use pipes */
+int parse_command(int * num_elements, int * create_background_process, 
+	int * amp_index, int * use_redirection, int * redirect_index, 
+	int * use_pipes, int * pipe_index, char ** args_parse){
+	int i = 0;
+	while(args_parse[i] != NULL) {
+		if(strcmp(args_parse[i], "&") == 0) {
+			*amp_index = i;
+			*create_background_process = 1;
+		}
+		if(strcmp(args_parse[i], "<") == 0 || strcmp(args_parse[i], ">") == 0){
+			*redirect_index = i;
+			*use_redirection = 1;
+		}
+		if(strcmp(args_parse[i], "|") == 0) {
+			*pipe_index = i;
+			*use_pipes = 1;
+		}
+		i++;
+	}			
+	*num_elements = i;
+	return 0; //success
+} 
 
 int main()
 {
@@ -110,9 +143,22 @@ int main()
 	printf("\n enter 'exit' to exit and return to bash.\n\n");
 	while (1) 
 	{
+		/* store number of elements in arg */
+		int num_elements = 0;
 		/* create a flag to determine whether to run the process in
 		   the background */
 		int create_background_process = 0;
+		/* store location of '&' for removal */
+		int amp_index = 0;
+		/* create a flag to determine whether to use redirection */
+		int use_redirection = 0;
+		/* store location of '<' or '>' */
+		int redirect_index = 0;
+		/* create a flag to determine whether to use pipes */
+		int use_pipes = 0;
+		/* store location of '|' */
+		int pipe_index = 0;
+		
 		/* Print prompt */
 		printf("$$imple$hell$  ");
 		/* flush all open output streams */
@@ -132,26 +178,63 @@ int main()
 		}
 
 		/* check to see if the user typed an "&" indicating he/she
-		   wants control over the shell back before the process is complete */
-		int i = 0;
-		while(args[i] != NULL) {
-			if(strcmp(args[i], "&") == 0) {
-				create_background_process = 1;
-				/* we'll use a goto statement so we stop searching once we've
-				   found the '&' as well as to preserve its location in our
-				   int value, i. */
-				goto End_while;
-			}
-			i++;
-		} End_while:
+		   wants control over the shell back before the process is complete 
+		   and whether I/O redirection will be necessary */
+		parse_command(&num_elements, &create_background_process, &amp_index, 
+			&use_redirection, &redirect_index, &use_pipes, &pipe_index, args);
 
-		switch(create_background_process){
+		printf("num_elements is %d\n", num_elements);
+
+		int case_ref = 0;
+		if(create_background_process == 1) {
+			case_ref = 1;
+		}
+		if(use_pipes == 1) {
+			case_ref = 2;
+		}
+
+		/* There are currently three different cases available.
+
+		   NOTE: I/O redirection is not yet functioning properly and is embedded
+		   inside case 0. Attempts to implement piping will result in a
+		   segmentation fault.
+
+				0: standard fork and wait
+					(currently attempts I/O redirection if user includes < or >)
+				1: creates process in background and gives user control over
+				   simple shell before process is completed
+				2: creates two separate child processes using piping
+		*/
+		switch(case_ref){
 
 			/* if the user does not indicate he/she wants to run a process in
 			   the background we will defer to a standard fork and wait */
 			case 0 :
 				/* fork and have the child execute the command */
 				if(fork() == 0) {
+					/* if I/O redirection is used */
+					if(use_redirection == 1){
+						printf("redirect index is %d\n", redirect_index);
+						char *afile = args[redirect_index +1];
+						printf("%s\n", afile);
+						int fd;
+						fd = open(afile, O_WRONLY, O_CREAT);
+						close(1);
+						dup(fd);
+						close(fd);
+
+						/* get rid of the < or > operator in args */
+						int c;
+						for (c = redirect_index; c < num_elements; c++) {
+							args[c] = args[c+1];
+						}
+						/* get rid of the last element */
+						args[c+1] = NULL;
+						int k;
+						for(k = 0; k <c+2; k++){
+							printf("%s\n", args[k]);
+						}
+					}
 					execvp(args[0], args);
 				/* have the parent wait */
 				} else {
@@ -164,7 +247,7 @@ int main()
 			   use a separate thread */
 			case 1 :
 				/* remove the '&'' from args */
-				*(args + i) = NULL;
+				*(args + amp_index) = NULL;
 
 				/* create a struct to pass arguments to pthread_create() */
 				struct args_param *command;
@@ -184,6 +267,39 @@ int main()
 
         		/* once runner is complete it can rejoin the parent shell */
         		pthread_join(tid, NULL);
+				break;
+
+			/* if the user wants to execute two commands using piping */
+			case 2 :;
+				int l;
+				int m ;
+				char ** args_one;
+				char** args_two;
+
+				/* separate the command into two arguments */
+				for(m = 0; m < pipe_index; m++){
+					args_one[m] = args[m];
+					printf("args_one at index %d is %s", m, args_one[m]);
+				}
+				m = 0;
+				for(l = pipe_index+1; l < num_elements; l++) {
+					args_two[m] = args[l];
+					printf("args_two at index %d is %s", m, args_two[m]);
+					m++;
+				}
+				
+				int pipeID[2]; //indices into File Table
+				pid_t pid1;
+				pid_t pid2;
+				pipe(pipeID);
+				//pipeID[0] is file descriptor for writing
+				//pipeID[1] is file descriptor for reading
+				if((pid1=fork())==0) {
+					printf("%d", pid1);
+					//read(pipeID[0], TOK_BUFSIZE, num_elements-1);
+				} else {
+					//write(pipeID[1], TOK_BUFSIZE, num_elements-1);
+				}
 				break;
 		}
 

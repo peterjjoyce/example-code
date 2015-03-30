@@ -76,7 +76,7 @@ int main()
 	int status;
 
 	printf("\n exited the BASH SHELL...\nentered the SIMPLE SHELL:");
-	printf("\n enter 'exit' to exit.\n\n");
+	printf("\n enter 'exit' to exit and return to bash.\n\n");
 	while (1) 
 	{
 		/* Print prompt */
