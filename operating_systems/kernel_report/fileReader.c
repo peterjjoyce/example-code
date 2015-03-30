@@ -19,7 +19,7 @@
    @param del the delimiter indicating the first word of the line being sought
    @param i the number of characters of del
    @param lineLength the length of the line being returned, which is altered
-            within this function after getline() is called
+            within this function after getlineFromFile() is called
 */
 char* getLineFromFile(const char *filename, const char *mode, const char* del, 
    int i, int * lineLength){
