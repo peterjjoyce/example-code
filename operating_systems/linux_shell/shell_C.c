@@ -130,6 +130,7 @@ int parse_command(int * num_elements, int * create_background_process,
 		i++;
 	}			
 	*num_elements = i;
+	printf("background? %d, redirect? %d, pipes? %d\n", *create_background_process, *use_redirection, *use_pipes);
 	return 0; //success
 } 
 
@@ -216,6 +217,21 @@ int main()
 					if(use_redirection == 1){
 						printf("redirect index is %d\n", redirect_index);
 						char *afile = args[redirect_index +1];
+
+						//get rid of the < or > operator in args
+						int c;
+						for (c = redirect_index; c < num_elements-1; c++) {
+							args[c] = args[c+1];
+							printf("%s\n", args[c]);
+						}
+
+						//get rid of the last element
+						args[c] = NULL; printf("%s\n", args[c]);
+						args[c+1]=NULL; printf("%s\n", args[c+1]);
+
+						int k;
+						for(k = 0; k <c+2; k++){
+							printf("%s\n", args[k]);
 						printf("%s\n", afile);
 						int fd;
 						fd = open(afile, O_WRONLY, O_CREAT);
@@ -223,19 +239,9 @@ int main()
 						dup(fd);
 						close(fd);
 
-						/* get rid of the < or > operator in args */
-						int c;
-						for (c = redirect_index; c < num_elements; c++) {
-							args[c] = args[c+1];
-						}
-						/* get rid of the last element */
-						args[c+1] = NULL;
-						int k;
-						for(k = 0; k <c+2; k++){
-							printf("%s\n", args[k]);
-						}
 					}
 					execvp(args[0], args);
+				}
 				/* have the parent wait */
 				} else {
 					int status;
