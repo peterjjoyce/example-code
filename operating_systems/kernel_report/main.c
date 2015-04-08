@@ -1,21 +1,6 @@
 /*
 ###############################################################################
 # @author Peter J. Joyce IV
-# @author Sean Themar
-# Project 1 Exercise B/C/D
-# CSCE 444 Spring 2015
-# 3.4.2015
-# Language used: C
-# Compiler used: GNU Debian 4.4.5-8 (gcc)
-# sources consulted:
-#   en.wikipedia.org/wiki/Procfs
-#   stackoverflow.com/questions/9629850/how-to-get-cpu-info-in-c-on-linux-such
-#      -as-number-of-cores
-#   www.open-std.org/jtc1/sc22/wg14/www/standards.html
-#   www.asciitable.com
-#   www.linuxhowtos.org/System/procstat.htm
-#   en.wikipedia.org/wiki/Unix_time
-# program description:
 #   This program produces a report on the following kernel statements:
 #      1)  CPU type and model
 #      2)  Kernel version
